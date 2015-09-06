@@ -1,0 +1,19 @@
+{
+    "name": "fousheezy/fzy-doctrine-utils",
+    "description": "Doctrine utility classes used in nearly any project that interacts with Doctrine repositories.",
+    "type": "lib",
+    "require": {
+        "doctrine/orm": "^2.5",
+        "fousheezy/fzy-utils": "1.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "John Foushee",
+            "email": "johnfoushee@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-0": {"FzyDoctrineUtils\\": "src", "FzyDoctrineUtilsTest": "test"}
+    }
+}
