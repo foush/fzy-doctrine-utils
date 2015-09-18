@@ -34,6 +34,7 @@ class Search implements SearchInterface {
 
     /**
      * @param \Doctrine\ORM\EntityRepository $repo
+     * @return $this
      */
     public function setRepository(EntityRepository $repo)
     {
@@ -51,6 +52,33 @@ class Search implements SearchInterface {
     {
         $total = $this->getCount($params);
         return new Result($total < 1 ? [] : $this->getResults($page, $params), $page, $total);
+    }
+
+    /**
+     * Applies search query via $params and invokes
+     * $callable on each result. $chunkSize specifies
+     * how many entities will be read into memory at once.
+     *
+     * @param Params $params
+     * @param $callable
+     * @param int $chunkSize
+     * @return $this
+     * @throws \FzyUtils\Exception\Configuration\Invalid
+     */
+    public function traverseResults(Params $params, $callable, $chunkSize = 100)
+    {
+        $total = $this->getCount($params);
+        $page = new Page(0, $chunkSize);
+        $page->setLimitBounds($chunkSize, $chunkSize);
+        while ($page->getOffset() < $total) {
+            $set = $this->getResults($page, $params);
+            $i = 0;
+            foreach ($set as $item) {
+                call_user_func($callable, $item, $page->getOffset() + $i++);
+            }
+            $page->setOffset($page->getOffset() + $page->getLimit());
+        }
+        return $this;
     }
 
     /**
@@ -157,11 +185,30 @@ class Search implements SearchInterface {
 
     protected function applyIndividualFilters(QueryBuilder $qb, $id, Params $params)
     {
-        $qb->andWhere($this->getAlias().'.id = :id')->setParameter('id', $id);
+        $qb->andWhere($this->alias('id', '= :id'))->setParameter('id', $id);
     }
 
+    /**
+     * Query alias used to refer to this entity
+     * @return string
+     */
     public function getAlias()
     {
         return 'e';
+    }
+
+    /**
+     * Convenience method
+     * Returns $prefix.$property $suffix
+     * If $prefix is null, it is set to $this->getAlias()
+     *
+     * @param $property
+     * @param string $suffix
+     * @param null $prefix
+     * @return string
+     */
+    protected function alias($property, $suffix = '', $prefix = null)
+    {
+        return ($prefix !== null ? $prefix : $this->getAlias()) . '.' . $property . ' ' .$suffix;
     }
 }
